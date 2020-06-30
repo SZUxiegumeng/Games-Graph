@@ -19,14 +19,20 @@ Eigen::Matrix4f get_view_matrix(Eigen::Vector3f eye_pos)
     return view;
 }
 
+//这个Z轴旋转矩阵
 Eigen::Matrix4f get_model_matrix(float rotation_angle)
 {
     Eigen::Matrix4f model = Eigen::Matrix4f::Identity();
-
-    // TODO: Implement this function
+	model(2, 2) = model(3, 3) = 1;
+	float rad = MY_PI * rotation_angle / 180.0;
+	float tsin = sin(rad), tcos = cos(rad);
+	model(0, 0) = tcos;
+	model(0, 1) = -tsin;
+	model(1, 0) = tsin;
+	model(1, 1) = tcos;
+	// TODO: Implement this function
     // Create the model matrix for rotating the triangle around the Z axis.
     // Then return it.
-
     return model;
 }
 
@@ -34,14 +40,30 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
                                       float zNear, float zFar)
 {
     // Students will implement this function
+//	std::cout << eye_fov << "  " << aspect_ratio << "   " << zNear << "   " << zFar << std::endl;
+	
+	//这个是透视矩阵
+	Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
+	projection(0, 0) = projection(1, 1) = -zNear;
+	projection(3, 2) = 1;
+	projection(2, 2) = -zNear - zFar;
+	projection(2, 3) = -zNear * zFar;
+	float top = zNear * tan(MY_PI *eye_fov / (2 * 180));
+	float right = top * aspect_ratio;
 
-    Eigen::Matrix4f projection = Eigen::Matrix4f::Identity();
+	//这个是规约到[-1，1]
+	Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+	transform(0, 0) = 1 / right;
+	transform(1, 1) = 1 / top;
+	transform(2, 2) = 2 / (zFar - zNear);
+	transform(3, 3) = 1;
+	transform(2.3) = (zNear + zFar) / 2;
+	
 
     // TODO: Implement this function
     // Create the projection matrix for the given parameters.
     // Then return it.
-
-    return projection;
+    return transform * projection;
 }
 
 int main(int argc, const char** argv)
