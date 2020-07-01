@@ -49,21 +49,27 @@ Eigen::Matrix4f get_projection_matrix(float eye_fov, float aspect_ratio,
 	projection(2, 2) = -zNear - zFar;
 	projection(2, 3) = -zNear * zFar;
 	float top = zNear * tan(MY_PI *eye_fov / (2 * 180));
+	float bottom = -top;
 	float right = top * aspect_ratio;
-
+	float left = -right;
 	//这个是规约到[-1，1]
-	Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
-	transform(0, 0) = 1 / right;
-	transform(1, 1) = 1 / top;
-	transform(2, 2) = 2 / (zFar - zNear);
-	transform(3, 3) = 1;
-	transform(2.3) = (zNear + zFar) / 2;
+	Eigen::Matrix4f trans_scale = Eigen::Matrix4f::Identity();
+	trans_scale(0, 0) = 2 / (right - left);
+	trans_scale(1, 1) = 2 / (top - bottom);
+	trans_scale(2, 2) = 2 / (zFar - zNear);
+	trans_scale(3, 3) = 1;
+	//这个是移动到原点
+	Eigen::Matrix4f trans_move = Eigen::Matrix4f::Identity();
+	trans_move(0, 0) = trans_move(1, 1) = trans_move(2, 2) = trans_move(3, 3) = 1;
+	trans_move(0, 3) = -(right + left) / 2;
+	trans_move(1, 3) = -(top + bottom) / 2;
+	trans_scale(2.3) = (zNear + zFar) / 2;
 	
 
     // TODO: Implement this function
     // Create the projection matrix for the given parameters.
     // Then return it.
-    return transform * projection;
+    return trans_scale * trans_move * projection;
 }
 
 int main(int argc, const char** argv)
