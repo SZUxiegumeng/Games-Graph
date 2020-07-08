@@ -34,8 +34,10 @@ void Renderer::Render(const Scene& scene)
             // Also, don't forget to multiply both of them with the variable
             // *scale*, and x (horizontal) variable with the *imageAspectRatio*
 			Vector3f dir = normalize(Vector3f(x, y, -1));
-			Ray t_ray(eye_pos, dir);
+		//	std::cout << " eye ray direction : " << dir.x << "  " << dir.y << "   " << dir.z << std::endl;
+			Ray t_ray(eye_pos, dir, 0.0);
 			framebuffer[m++] = scene.castRay(t_ray, 0);
+		//	std::cout << "framebuffer x,y,z : " << framebuffer[m - 1].x << "  " << framebuffer[m - 1].y << "  " << framebuffer[m - 1].z << std::endl;
             // Don't forget to normalize this direction!
 
         }

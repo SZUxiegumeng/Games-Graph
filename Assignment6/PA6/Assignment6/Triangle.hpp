@@ -122,7 +122,7 @@ public:
         std::vector<Object*> ptrs;
         for (auto& tri : triangles)
             ptrs.push_back(&tri);
-
+	//	std::cout << "this is all triangles :  " << triangles.size() << std::endl;
         bvh = new BVHAccel(ptrs);
     }
 
@@ -211,7 +211,7 @@ inline Bounds3 Triangle::getBounds() { return Union(Bounds3(v0, v1), v2); }
 inline Intersection Triangle::getIntersection(Ray ray)
 {
     Intersection inter;
-
+//	std::cout << "Triangle is test " << std::endl;
     if (dotProduct(ray.direction, normal) > 0)
         return inter;
     double u, v, t_tmp = 0;
@@ -231,6 +231,7 @@ inline Intersection Triangle::getIntersection(Ray ray)
         return inter;
     t_tmp = dotProduct(e2, qvec) * det_inv;
     // TODO find ray triangle intersection
+	//std::cout << "triangle run " << std::endl;
 	if (t_tmp > 0)
 	{
 		inter.happened = true;
