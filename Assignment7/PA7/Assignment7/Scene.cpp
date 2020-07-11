@@ -63,6 +63,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 	// TO DO Implement Path Tracing Algorithm here
 	//这个是物体的碰撞点
 	Intersection pInter = Scene::intersect(ray);
+	Vector3f L_dir;
 	if(!pInter.happened)
 		return Vector3f();
 	else if (pInter.obj->hasEmit())
@@ -70,32 +71,34 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 		auto L = pInter.m->getEmission() * -dotProduct(ray.direction, pInter.normal);
 		return L;
 	}
-	Vector3f pToEyeDir = normalize(ray.direction);
-	Intersection LightInter;
-	float Light_pdf;
-	sampleLight(LightInter, Light_pdf);
-	Vector3f pToLightDir = normalize(LightInter.coords - pInter.coords);
-	float pToLightT = (LightInter.coords - pInter.coords).norm();
-	Ray pToLightRay(pInter.coords, pToLightDir);
-	Vector3f L_dir;
-	//这个是判断是不是背面
-	if (dotProduct(pToLightRay.direction, pInter.normal) > 0 && dotProduct(pToLightRay.direction, LightInter.normal)<0)
+	else
 	{
-		Intersection pTolightTravel = Scene::intersect(pToLightRay);
-		//没碰到，或者没碰在光源和P之间
-		if (!pTolightTravel.happened || pTolightTravel.distance >= pToLightT)
+		Vector3f pToEyeDir = normalize(ray.direction);
+		Intersection LightInter;
+		float Light_pdf;
+		sampleLight(LightInter, Light_pdf);
+		Vector3f pToLightDir = normalize(LightInter.coords - pInter.coords);
+		//float pToLightT = (LightInter.coords - pInter.coords).norm();
+		Ray pToLightRay(pInter.coords + pToLightDir * EPSILON, pToLightDir);
+		//这个是判断是不是背面
+		if (dotProduct(pToLightRay.direction, pInter.normal) > 0 && dotProduct(pToLightRay.direction, LightInter.normal) < 0)
 		{
-			//计算直接光照
-			L_dir = LightInter.emit * pInter.m->eval(ray.direction, pToLightRay.direction, pInter.normal)
-				*dotProduct(pToLightRay.direction, pInter.normal)
-				*dotProduct(-pToLightRay.direction, LightInter.normal)
-				/ pow((LightInter.coords - pInter.coords).norm(), 2)
-				/ Light_pdf;
+			Intersection pTolightTravel = Scene::intersect(pToLightRay);
+			//没碰到，或者没碰在光源和P之间
+			if (!pTolightTravel.happened || (pTolightTravel.coords - LightInter.coords).norm() <= EPSILON)
+			{
+				//计算直接光照
+				L_dir = LightInter.emit * pInter.m->eval(ray.direction, pToLightRay.direction, pInter.normal)
+					*dotProduct(pToLightRay.direction, pInter.normal)
+					*dotProduct(-pToLightRay.direction, LightInter.normal)
+					/ pow((LightInter.coords - pInter.coords).norm(), 2)
+					/ Light_pdf;
+			}
 		}
 	}
 	Vector3f L_indir;
 	//这里俄罗斯轮盘赌
-	if ((rand() / double(RAND_MAX)) > this->RussianRoulette)
+	if (get_random_float() > this->RussianRoulette)
 	{
 		return L_dir + L_indir;
 	}
@@ -103,7 +106,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 	Ray pSampleRay(pInter.coords, pSampleDir);
 	Intersection sampleIntersect = Scene::intersect(pSampleRay);
 	//间接光照
-	if (sampleIntersect.happened && !sampleIntersect.obj->hasEmit())
+	if (false && sampleIntersect.happened && !sampleIntersect.obj->hasEmit())
 	{
 		L_indir = castRay(pSampleRay, depth + 1) * pInter.m->eval(ray.direction, pSampleRay.direction, pInter.normal)
 			* dotProduct(pSampleRay.direction, pInter.normal)

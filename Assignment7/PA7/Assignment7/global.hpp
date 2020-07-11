@@ -5,8 +5,8 @@
 
 #undef M_PI
 #define M_PI 3.141592653589793f
-#define SceneRate 784/4
-#define spp 8
+#define SceneRate 784
+#define spp 4
 
 extern const float  EPSILON;
 const float kInfinity = std::numeric_limits<float>::max();
