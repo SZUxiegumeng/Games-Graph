@@ -27,17 +27,28 @@ void Renderer::Render(const Scene& scene)
     // change the spp value to change sample ammount
    // int spp = 8;
     std::cout << "SPP: " << spp << "\n";
+	int sqrtspp = sqrt(spp);
+	std::vector<std::vector<float>> randomSample(sqrtspp, std::vector<float>(sqrtspp, 0.0));
     for (uint32_t j = 0; j < scene.height; ++j) {
         for (uint32_t i = 0; i < scene.width; ++i) {
             // generate primary ray direction
-            float x = (2 * (i + 0.5) / (float)scene.width - 1) *
-                      imageAspectRatio * scale;
-            float y = (1 - 2 * (j + 0.5) / (float)scene.height) * scale;
+			
+			//这里的采样变成了划分成spp格子里，随机抖动
+			//经过简单测试，没看出来有啥子区别
+			//把随机数先单独生成，但是不知道要不要重新建立随机数生成器
+			for (int kx = 0; kx < sqrtspp; kx++)
+				for (int ky = 0; ky < sqrtspp; ++ky)
+					randomSample[kx][ky] = get_random_float();
+			for (int kx = 0; kx < sqrtspp; kx++)
+				for (int ky = 0; ky < sqrtspp;++ky) 
+				{
+					float x = (2 * (i + (kx+ randomSample[kx][ky])/sqrtspp) / (float)scene.width - 1) *
+						imageAspectRatio * scale;
+					float y = (1 - 2 * (j + (ky + randomSample[kx][ky]) / sqrtspp ) / (float)scene.height) * scale;
 
-            Vector3f dir = normalize(Vector3f(-x, y, 1));
-            for (int k = 0; k < spp; k++){
-                framebuffer[m] += scene.castRay(Ray(eye_pos, dir), 0) / spp;  
-            }
+					Vector3f dir = normalize(Vector3f(-x, y, 1));
+					framebuffer[m] += scene.castRay(Ray(eye_pos, dir), 0) / spp;  
+				}
             m++;
         }
         UpdateProgress(j / (float)scene.height);

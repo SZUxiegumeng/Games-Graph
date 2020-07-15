@@ -66,7 +66,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 	Vector3f L_dir;
 	if(!pInter.happened)
 		return Vector3f();
-	else if (pInter.obj->hasEmit())
+	else if (depth==0 && pInter.obj->hasEmit())
 	{
 		auto L = pInter.m->getEmission() * -dotProduct(ray.direction, pInter.normal);
 		return L;
@@ -106,7 +106,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 	Ray pSampleRay(pInter.coords, pSampleDir);
 	Intersection sampleIntersect = Scene::intersect(pSampleRay);
 	//间接光照
-	if (false && sampleIntersect.happened && !sampleIntersect.obj->hasEmit())
+	if (true && sampleIntersect.happened && !sampleIntersect.obj->hasEmit())
 	{
 		L_indir = castRay(pSampleRay, depth + 1) * pInter.m->eval(ray.direction, pSampleRay.direction, pInter.normal)
 			* dotProduct(pSampleRay.direction, pInter.normal)
