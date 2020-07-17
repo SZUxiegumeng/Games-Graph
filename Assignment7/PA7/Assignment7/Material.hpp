@@ -7,7 +7,7 @@
 
 #include "Vector.hpp"
 
-enum MaterialType { DIFFUSE};
+enum MaterialType { DIFFUSE, DIFFUSE_COS};
 
 class Material{
 private:
@@ -133,15 +133,26 @@ Vector3f Material::sample(const Vector3f &wi, const Vector3f &N){
     switch(m_type){
         case DIFFUSE:
         {
-            // uniform sample on the hemisphere
+         /*   // uniform sample on the hemisphere
             float x_1 = get_random_float(), x_2 = get_random_float();
             float z = std::fabs(1.0f - 2.0f * x_1);
             float r = std::sqrt(1.0f - z * z), phi = 2 * M_PI * x_2;
             Vector3f localRay(r*std::cos(phi), r*std::sin(phi), z);
             return toWorld(localRay, N);
-            
             break;
-        }
+		*/
+
+			float x_1 = get_random_float(), x_2 = get_random_float();
+			float z = (1.0f - 2.0f * x_1);
+			z = cos(acos(z) / 2);
+			float r = std::sqrt(1.0f - z * z), phi = 2 * M_PI * x_2;
+			//	std::cout << "this is r and phi : " << r << "  " << phi << std::endl;
+			Vector3f localRay(r*std::cos(phi), r*std::sin(phi), z);
+			//	std::cout << "localRay : " << localRay.x << "  " << localRay.y << "  " << localRay.z << std::endl;
+		//	std::cout << "this is N_wo : " << dotProduct(localRay, Vector3f(0, 0, 1)) << std::endl;
+			return toWorld(localRay, N);
+			break;
+        }			
     }
 }
 
@@ -150,12 +161,23 @@ float Material::pdf(const Vector3f &wi, const Vector3f &wo, const Vector3f &N){
         case DIFFUSE:
         {
             // uniform sample probability 1 / (2 * PI)
-            if (dotProduct(wo, N) > 0.0f)
+         /*   if (dotProduct(wo, N) > 0.0f)
                 return 0.5f / M_PI;
             else
                 return 0.0f;
-            break;
+            break;*/
+			//这个是正比cos，但实际上还是要有f
+			float c = EPSILON;
+			if ((c = dotProduct(wo, N)) > 0.0f)
+			{
+				//	std::cout << "this is c and pdf : " <<c<<"  "<< c / M_PI << std::endl;
+				return c / M_PI;
+			}
+			else
+				return 0.0f;
+			break;
         }
+			
     }
 }
 
