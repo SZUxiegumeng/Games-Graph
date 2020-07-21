@@ -16,14 +16,17 @@ int main(int argc, char** argv)
     // Change the definition here to change resolution
     Scene scene(SceneRate, SceneRate);
 
-    Material* red = new Material(DIFFUSE, Vector3f(0.0f));
+    Material* red = new Material(DIFFUSE_COS, Vector3f(0.0f));
     red->Kd = Vector3f(0.63f, 0.065f, 0.05f);
-    Material* green = new Material(DIFFUSE, Vector3f(0.0f));
+    Material* green = new Material(DIFFUSE_COS, Vector3f(0.0f));
     green->Kd = Vector3f(0.14f, 0.45f, 0.091f);
-    Material* white = new Material(DIFFUSE, Vector3f(0.0f));
+    Material* white = new Material(DIFFUSE_COS, Vector3f(0.0f));
     white->Kd = Vector3f(0.725f, 0.71f, 0.68f);
-    Material* light = new Material(DIFFUSE, (8.0f * Vector3f(0.747f+0.058f, 0.747f+0.258f, 0.747f) + 15.6f * Vector3f(0.740f+0.287f,0.740f+0.160f,0.740f) + 18.4f *Vector3f(0.737f+0.642f,0.737f+0.159f,0.737f)));
+    Material* light = new Material(DIFFUSE_COS, (8.0f * Vector3f(0.747f+0.058f, 0.747f+0.258f, 0.747f) + 15.6f * Vector3f(0.740f+0.287f,0.740f+0.160f,0.740f) + 18.4f *Vector3f(0.737f+0.642f,0.737f+0.159f,0.737f)));
     light->Kd = Vector3f(0.65f);
+
+	Material* white1 = new Material(DIFFUSE_COS, Vector3f(0.0f));
+	white1->Kd = Vector3f(0.725f, 0.71f, 0.68f);
 
     MeshTriangle floor("../../models/cornellbox/floor.obj", white);
     MeshTriangle shortbox("../../models/cornellbox/shortbox.obj", white);
@@ -31,13 +34,19 @@ int main(int argc, char** argv)
     MeshTriangle left("../../models/cornellbox/left.obj", red);
     MeshTriangle right("../../models/cornellbox/right.obj", green);
     MeshTriangle light_("../../models/cornellbox/light.obj", light);
+	//MeshTriangle Sakura("../../models/sf2-sakura/sakura.obj", white);
+	Vector3f center(200, 150, 350);
+	Sphere boll(center, 100, white1);
+
 
     scene.Add(&floor);
-    scene.Add(&shortbox);
-    scene.Add(&tallbox);
+   // scene.Add(&shortbox);
+   // scene.Add(&tallbox);
     scene.Add(&left);
     scene.Add(&right);
     scene.Add(&light_);
+//	scene.Add(&Sakura);
+	scene.Add(&boll);
 
     scene.buildBVH();
 

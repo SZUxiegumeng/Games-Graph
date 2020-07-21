@@ -77,6 +77,7 @@ public:
         pos.coords = v0 * (1.0f - x) + v1 * (x * (1.0f - y)) + v2 * (x * y);
         pos.normal = this->normal;
         pdf = 1.0f / area;
+	//	std::cout << "Triangle/Sample pdf : " << pdf << std::endl;
     }
     float getArea(){
         return area;
@@ -197,6 +198,7 @@ public:
     
     void Sample(Intersection &pos, float &pdf){
         bvh->Sample(pos, pdf);
+	//	std::cout << "MeshTriangle/Sample pdf : " << pdf << std::endl;
         pos.emit = m->getEmission();
     }
     float getArea(){
@@ -253,7 +255,7 @@ inline Intersection Triangle::getIntersection(Ray ray)
     t_tmp = dotProduct(e2, qvec) * det_inv;
 
     // TODO find ray triangle intersection
-	if (t_tmp > 0)
+	if (t_tmp >= 0)
 	{
 		inter.happened = true;
 		inter.coords = ray(t_tmp);
@@ -269,3 +271,4 @@ inline Vector3f Triangle::evalDiffuseColor(const Vector2f&) const
 {
     return Vector3f(0.5, 0.5, 0.5);
 }
+

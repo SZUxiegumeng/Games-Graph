@@ -47,7 +47,8 @@ void Renderer::Render(const Scene& scene)
 					float y = (1 - 2 * (j + (ky + randomSample[kx][ky]) / sqrtspp ) / (float)scene.height) * scale;
 
 					Vector3f dir = normalize(Vector3f(-x, y, 1));
-					framebuffer[m] += scene.castRay(Ray(eye_pos, dir), 0) / spp;  
+					framebuffer[m] += scene.castRay(Ray(eye_pos, dir), 0) / (sqrtspp*sqrtspp);  
+					//framebuffer[m] += Vector3f(1.0) / (sqrtspp*sqrtspp);
 				}
             m++;
         }
@@ -57,7 +58,7 @@ void Renderer::Render(const Scene& scene)
 
     // save framebuffer to file
 	char filename[100];
-	sprintf(filename, "binary_%d_%d.ppm", SceneRate, spp);
+	sprintf(filename, "binary_%d_%d_%d.ppm", SceneRate, spp,time(0));
     FILE* fp = fopen(filename, "wb");
     (void)fprintf(fp, "P6\n%d %d\n255\n", scene.width, scene.height);
     for (auto i = 0; i < scene.height * scene.width; ++i) {
