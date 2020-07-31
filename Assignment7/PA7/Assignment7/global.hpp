@@ -5,9 +5,10 @@
 
 #undef M_PI
 #define M_PI 3.141592653589793f
-#define SceneRate 784
-#define spp 4
+#define SceneRate 1024
+#define spp 8
 
+//#define DEBUG1
 extern const float  EPSILON;
 const float kInfinity = std::numeric_limits<float>::max();
 
@@ -32,8 +33,8 @@ inline  bool solveQuadratic(const float &a, const float &b, const float &c, floa
 
 inline float get_random_float()
 {
-    std::random_device dev;
-    std::mt19937 rng(dev());
+    static std::random_device dev;
+    static std::mt19937 rng(dev());
     std::uniform_real_distribution<float> dist(0.f, 1.f); // distribution in range [1, 6]
 
     return dist(rng);
@@ -53,3 +54,23 @@ inline void UpdateProgress(float progress)
     std::cout << "] " << int(progress * 100.0) << " %\r";
     std::cout.flush();
 };
+
+inline float pow2(float t)
+{
+	return t * t;
+}
+
+inline float pow5(float t)
+{
+	return t * t * t * t * t;
+}
+
+inline int signFc(float t)
+{
+	return t > 0 ? 1 : -1;
+}
+
+inline int characFc(float t)
+{
+	return t > 0 ? 1 : 0;
+}

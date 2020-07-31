@@ -96,7 +96,8 @@ public:
         loader.LoadFile(filename);
         area = 0;
         m = mt;
-        assert(loader.LoadedMeshes.size() == 1);
+        //assert(loader.LoadedMeshes.size() == 1);
+		std::cout << "this is size " << loader.LoadedMeshes.size() << std::endl;
         auto mesh = loader.LoadedMeshes[0];
 
         Vector3f min_vert = Vector3f{std::numeric_limits<float>::infinity(),
@@ -261,7 +262,7 @@ inline Intersection Triangle::getIntersection(Ray ray)
 		inter.coords = ray(t_tmp);
 		inter.distance = t_tmp;
 		inter.m = this->m;
-		inter.normal = this->normal;
+		inter.normal = normalize(this->normal);
 		inter.obj = this;
 	}
     return inter;
