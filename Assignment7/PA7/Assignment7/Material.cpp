@@ -88,11 +88,14 @@ float Material::GeomAtteFactor(const Vector3f &wi, const Vector3f& wo, const Vec
 	case GGX:
 	case BSDF:
 	{
+		if (false && dotProduct(h, N) < 0)
+			std::cout << "this is BUG" << std::endl;
 		float cos_i = dotProduct(wi, N), cos_o = dotProduct(wo, N), ag = this->roughness;
 		float G1 = 2 * characFc(dotProduct(wi, h) / cos_i)*cos_i / (cos_i + sqrtf(cos_i*cos_i + ag * ag*(1 - cos_i * cos_i)));
 		float G2 = 2 * characFc(dotProduct(wi, h) / cos_o)*cos_o / (cos_o + sqrtf(cos_o*cos_o + ag * ag*(1 - cos_o * cos_o)));
+		G1 = abs(G1); G2 = abs(G2);
 		//std::cout << "this is G : " << G1 << "   " << G2 << std::endl;
-		return 1.0f;
+		//return 1.0f;
 		return std::max(0.0f, std::min(1.0f, G1 * G2));
 	}
 	}
@@ -109,17 +112,22 @@ Vector3f Material::sample(const Vector3f &wi, const Vector3f &N,float& m_pdf) {
 		float r = std::sqrt(1.0f - z * z), phi = 2 * M_PI * x_2;
 		Vector3f h(r*std::cos(phi), r*std::sin(phi), z);
 		h = normalize(toWorld(h, N));
+		float cosSita = dotProduct(h, N);
 		float F = Fresnels(wi, wi, N, h);
 		m_pdf = 2.0f*m_p2*r*z / (2 * M_PI*pow2(1 + z * z*(m_p2 - 1)));
 	//	std::cout << "this is Fresnels : " << F << std::endl;
 		bool isreflect = true;
+
 		if (x_3 > F)
 			isreflect = false;
 		//std::cout << "this cos h and N : " << dotProduct(h, N) << std::endl;
 		Vector3f wo(0);
+		wo = normalize(refract(-wi, h, nt));
+		if (wo.norm() < EPSILON)
+			isreflect = true;
 		if (isreflect)
 		{
-			wo = reflect(wi, h);
+			wo = normalize(reflect(wi, h));
 			if (dotProduct(wi, N) * dotProduct(wo, N) < 0)
 			{
 				m_pdf = -1.0;
@@ -127,7 +135,7 @@ Vector3f Material::sample(const Vector3f &wi, const Vector3f &N,float& m_pdf) {
 			}
 			else
 			{
-				m_pdf *= F / (4.f*abs(dotProduct(wi, h)));
+				m_pdf *= 1;//F / (4.f*abs(dotProduct(wi, h)));
 			//	std::cout << "this is reflect : " << dotProduct(wi, N)<<"  "<<dotProduct(wo,N)<< std::endl;
 			}
 		}
@@ -135,18 +143,28 @@ Vector3f Material::sample(const Vector3f &wi, const Vector3f &N,float& m_pdf) {
 		{
 			float ni = this->ni, nt = this->nt;
 			wo = normalize(refract(-wi, h, nt));
+		//	std::cout << "this is h/N  " << dotProduct(h, N) << std::endl;
+		//	std::cout << "this is F  " <<  F << std::endl;
 			if (dotProduct(wo, N) < 0)
 				std::swap(ni, nt);
-			if (dotProduct(wi, N) * dotProduct(wo, N) > 0)
+			if (dotProduct(wi, N) * dotProduct(wo, N) > 0 || dotProduct(wi,N)*dotProduct(wi,h)<0)
 			{
 				m_pdf = -1.0;
 				//std::cout << "this refract : " << dotProduct(wi, h) << "   " << dotProduct(wo, h) << std::endl;
 			}
 			else
 			{
-				m_pdf *= (1 - F)*nt*nt*abs(dotProduct(wi, h)) / pow2(ni*dotProduct(wo, h) + nt * dotProduct(wi, h));
-			//	std::cout << "this refract : " << dotProduct(wi, h) << "   " << dotProduct(wo, h) << std::endl;
+				m_pdf *= 1;//(1 - F)*nt*nt*abs(dotProduct(wi, h)) / pow2(ni*dotProduct(wo, h) + nt * dotProduct(wi, h));
+			//	std::cout << "this refract with h : " << dotProduct(wi, h) << "   " << dotProduct(wo, h) << std::endl;
+			//	std::cout << "this refract with N : " << dotProduct(wi, N) << "   " << dotProduct(wo, N) << std::endl;
+		//		std::cout << "this wi,wo : " << dotProduct(wi, wi) << "   " << dotProduct(wo, wo) << std::endl;
+				auto hpp = -normalize(wo*ni + wi * nt);
+				auto hppf = -normalize(wo*nt + wi * ni);
+			//	std::cout << "this is htCos  fan:  " << dotProduct(hpp, h) <<"   "<<dotProduct(hppf,h) << std::endl;
+				if (abs(dotProduct(hpp, h) - 1) > EPSILON)
+					std::cout << "this is fxck" << std::endl;
 			//	std::cout << "this is pdf : " << m_pdf << std::endl;
+			
 			}
 		}
 	//	std::cout << "this is pdf : " << m_pdf << std::endl;
@@ -279,6 +297,8 @@ Vector3f Material::eval(const Vector3f &wi, const Vector3f &wo, const Vector3f &
 		if (dotProduct(N,wi)*dotProduct(N, wo) > 0)
 		{
 			Vector3f hr = normalize(wi + wo);
+			if (dotProduct(hr, N) < 0)
+				hr = -hr;
 			Vector3f F = Fresnels(wi, wo, N, hr);
 			Vector3f fr = NormalDistrFunc(wi, wo, N, hr)* F* GeomAtteFactor(wi, wo, N, hr) /
 				(4 * dotProduct(N, wo)*dotProduct(N, wi));
@@ -287,16 +307,32 @@ Vector3f Material::eval(const Vector3f &wi, const Vector3f &wo, const Vector3f &
 		}
 		else
 		{
-			if(dotProduct(N,wi)<0)
+			if (dotProduct(N, wo) < 0)
+			{
 				std::swap(ni, no);
-			Vector3f ht = -normalize(wi * ni + no * wo);
+			//	std::cout << "this is inside ft " << std::endl;
+			}
+			Vector3f ht = -normalize(wo * ni + no * wi);
+			if (dotProduct(ht, N) < 0)
+				ht = -ht;
+		//	std::cout << "this is N/h - eval " << dotProduct(ht, N) << std::endl;
+			if (false && dotProduct(ht, N) < 0)
+			{
+				std::cout << "this is wi/N " << dotProduct(wi, ht) << std::endl;
+				std::cout << "this is wo/N " << dotProduct(wo, ht) << std::endl;
+				auto hpp = -normalize(wo * no + ni * wi);
+				std::cout << "this is hpp " << dotProduct(N, hpp) << std::endl;
+			}
 			Vector3f ft = abs(dotProduct(wi, ht)) * abs(dotProduct(wo, ht)) *
 				no*no*(Vector3f(1.0f) - Fresnels(wi, wo, N, ht))*GeomAtteFactor(wi, wo, N, ht)*NormalDistrFunc(wi, wo, N, ht) /
-				(abs(dotProduct(wi, N))*abs(dotProduct(wo, N))*pow2(ni*dotProduct(wi, ht) + no * dotProduct(wo, ht)));
-		/*	std::cout << "this is BSDF ft По----------------->" << ft << std::endl;
-			std::cout << "this is F : " << Fresnels(wi, wo, N, ht) << std::endl;
-			std::cout << "this is G : " << GeomAtteFactor(wi, wo, N, ht) << std::endl;
-			std::cout << "this is D : " << NormalDistrFunc(wi, wo, N, ht) << std::endl;*/
+				(abs(dotProduct(wi, N))*abs(dotProduct(wo, N))*pow2(no*dotProduct(wi, ht) + ni * dotProduct(wo, ht)));
+			if (false )
+			{
+				std::cout << "this is BSDF ft По----------------->" << ft << std::endl;
+				std::cout << "this is F : " << Fresnels(wi, wo, N, ht) << std::endl;
+				std::cout << "this is G : " << GeomAtteFactor(wi, wo, N, ht) << std::endl;
+				std::cout << "this is D : " << NormalDistrFunc(wi, wo, N, ht) << std::endl;
+			}
 			return ft;
 		}
 		break;

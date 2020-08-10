@@ -142,7 +142,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 		return L_dir + L_indir;
 	}
 	float inLight_pdf = 0;
-	Vector3f pSampleinDir = normalize(pInter.m->sample(ray.direction, pInter.normal, inLight_pdf));
+	Vector3f pSampleinDir = normalize(pInter.m->sample(pToEyeDir, pInter.normal, inLight_pdf));
 	//std::cout << "this is indirect light : " << pSampleDir.x << "  " << pSampleDir.y << "  " << pSampleDir.z << std::endl;
 	Ray pSampleinRay(pInter.coords + EPSILON* pSampleinDir, pSampleinDir);
 	Intersection insampleIntersect = Scene::intersect(pSampleinRay);
@@ -152,12 +152,25 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 	{
 	//	if (t1.x < 0 || t1.y < 0 || t1.z < 0)
 	//		std::cout << "this is indir " << t1 << std::endl;
-		L_indir = castRay(pSampleinRay, depth + 1) * pInter.m->eval(pToEyeDir, pSampleinRay.direction, pInter.normal)
+		//std::cout << "===============" << std::endl;
+		Vector3f ft = pInter.m->eval(pToEyeDir, pSampleinRay.direction, pInter.normal);
+		L_indir = castRay(pSampleinRay, depth + 1) * ft
 			* abs(dotProduct(pSampleinRay.direction, pInter.normal))
-			/ inLight_pdf
+			/ (inLight_pdf + EPSILON)
 			/ this->RussianRoulette;
-		//if(dotProduct(pInter.normal,pToEyeDir) * dotProduct(pInter.normal,pSampleinRay.direction) < 0)
-		//	std::cout << "this is L_indir :  " << L_indir << std::endl;
+		if (false && dotProduct(pInter.normal, pToEyeDir) * dotProduct(pInter.normal, pSampleinRay.direction) < 0)
+		{
+			float ni =pInter.m->ni, no = pInter.m->nt;
+			Vector3f ht = -normalize(pSampleinRay.direction * ni + no * pToEyeDir);
+			if (dotProduct(pInter.normal, ht) < 0)
+			{
+				std::cout << "this is L_indir :  " << L_indir << std::endl;
+				std::cout << "this is ft :  " << ft << std::endl;
+				std::cout << "this is pdf :  " << inLight_pdf << std::endl;
+				Vector3f htf = -normalize(pSampleinRay.direction * no + ni * pToEyeDir);
+				std::cout << "this is htf :  " << dotProduct(pInter.normal, htf) << std::endl;
+			}
+		}
 	}
 	//auto L = L_dir + L_indir;
 	//if(L.x>1 || L.y>1 ||L.z>1)

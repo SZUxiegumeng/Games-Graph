@@ -99,8 +99,8 @@ public:
     Vector3f Kd, Ks;
     float specularExponent;
     //Texture tex;
-	float roughness = 0.5, metal = 0.09;//这是粗糙度，金属度
-	float F0 = 0.05f;
+	float roughness = 0.25, metal = 0.09;//这是粗糙度，金属度
+	float F0 = 0.08f;
 	Vector3f basecolor = Vector3f(1.0f);
 	float nt = 1.61f, ni= 1.0f;
 
