@@ -93,11 +93,11 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 		//Ray pSampleRay(pInter.coords + EPSILON * pSampleDir, pSampleDir);
 		//Intersection sampleIntersect = Scene::intersect(pSampleRay);
 		//这个是判断是不是背面，感觉后面BSDF也要去除
-		if ( abs(dotProduct(pToLightRay.direction, pInter.normal)) > EPSILON && dotProduct(pToLightRay.direction, LightInter.normal) < -EPSILON)
+		if (depth!=0 &&  dotProduct(pToLightRay.direction, pInter.normal) > EPSILON && dotProduct(pToLightRay.direction, LightInter.normal) < -EPSILON)
 		{
 			Intersection pTolightTravel = Scene::intersect(pToLightRay);
 			//没碰在光源和P之间
-			if ( (pTolightTravel.coords - LightInter.coords).norm() <= EPSILON)
+			if (true && (pTolightTravel.coords - LightInter.coords).norm() <= EPSILON)
 			{
 			//	if (sampleIntersect.happened && sampleIntersect.obj->hasEmit())
 			//		Sample_pdf_p1 = Light_pdf_p1;
@@ -112,6 +112,11 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 					/ (Light_pdf_p1  ); 
 #ifdef DEBUG1
 				std::cout << "this is fr : " << fr << std::endl;
+				std::cout << "this is emit : " << LightInter.emit << std::endl;
+				std::cout << "this is VoN : " << abs(dotProduct(pToLightRay.direction, pInter.normal)) << std::endl;
+				std::cout << "this is lightCos : " << abs(dotProduct(-pToLightRay.direction, LightInter.normal)) << std::endl;
+				std::cout << "this is dist : " << pow((LightInter.coords - pInter.coords).norm(), 2) << std::endl;
+				std::cout << "this is pdf : " << Light_pdf_p1 << std::endl;
 				std::cout << "this is L_dir : " << L_dir << std::endl;
 				std::cout << "================" << std::endl;
 
@@ -158,17 +163,20 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 			* abs(dotProduct(pSampleinRay.direction, pInter.normal))
 			/ (inLight_pdf + EPSILON)
 			/ this->RussianRoulette;
+		//L_indir =L_indir * Vector3f(2.0f);
 		if (false && dotProduct(pInter.normal, pToEyeDir) * dotProduct(pInter.normal, pSampleinRay.direction) < 0)
 		{
-			float ni =pInter.m->ni, no = pInter.m->nt;
+			float ni =pInter.m->m_ni, no = pInter.m->m_nt;
 			Vector3f ht = -normalize(pSampleinRay.direction * ni + no * pToEyeDir);
-			if (dotProduct(pInter.normal, ht) < 0)
+			if (dotProduct(pInter.normal, ht) < 0 )
 			{
 				std::cout << "this is L_indir :  " << L_indir << std::endl;
 				std::cout << "this is ft :  " << ft << std::endl;
 				std::cout << "this is pdf :  " << inLight_pdf << std::endl;
+				std::cout << "this is NoV :  " << abs(dotProduct(pSampleinRay.direction, pInter.normal)) << std::endl;
 				Vector3f htf = -normalize(pSampleinRay.direction * no + ni * pToEyeDir);
 				std::cout << "this is htf :  " << dotProduct(pInter.normal, htf) << std::endl;
+				std::cout << "======================================" << std::endl;
 			}
 		}
 	}

@@ -41,25 +41,26 @@ int main(int argc, char** argv)
 	Material* white1 = new Material(BSDF, Vector3f(0.0f));
 	white1->Kd = Vector3f(0.725f, 0.71f, 0.68f);
 
-    MeshTriangle floor("../../models/cornellbox/floor.obj", green);
-    MeshTriangle shortbox("../../models/cornellbox/shortbox.obj", white);
-    MeshTriangle tallbox("../../models/cornellbox/tallbox.obj", white1);
+    MeshTriangle floor("../../models/cornellbox/floor.obj", white);
+    MeshTriangle shortbox("../../models/cornellbox/shortbox.obj", white1);
+    MeshTriangle tallbox("../../models/cornellbox/tallbox.obj", white);
     MeshTriangle left("../../models/cornellbox/left.obj", red);
     MeshTriangle right("../../models/cornellbox/right.obj", green);
     MeshTriangle light_("../../models/cornellbox/light.obj", light);
 	MeshTriangle Sakura("../../models/sf2-sakura/sakura.obj", white);
 	Vector3f center(200, 150, 350);
 	Sphere boll(center, 100, white1);
-	Cube cube1(Vector3f(150, 100, 200), Vector3f(300, 250, 220), white1);
+	Cube cube1(Vector3f(150, 150, 300), Vector3f(250, 250, 400), white1);
 
 
     scene.Add(&floor);
-   // scene.Add(&shortbox);
-    scene.Add(&tallbox);
+    scene.Add(&shortbox);
+   // scene.Add(&tallbox);
     scene.Add(&left);
 	scene.Add(&right);
     scene.Add(&light_);
 	//scene.Add(&Sakura);
+	//scene.Add(&boll);
 	//scene.Add(&cube1);
 
     scene.buildBVH();

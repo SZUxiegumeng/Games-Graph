@@ -99,10 +99,10 @@ public:
     Vector3f Kd, Ks;
     float specularExponent;
     //Texture tex;
-	float roughness = 0.25, metal = 0.09;//这是粗糙度，金属度
-	float F0 = 0.08f;
+	float roughness = 0.75, metal = 0.09;//这是粗糙度，金属度
+	float F0 = 0.055f;
 	Vector3f basecolor = Vector3f(1.0f);
-	float nt = 1.61f, ni= 1.0f;
+	float m_nt = 1.61f, m_ni= 1.0f;
 
     inline Material(MaterialType t=DIFFUSE, Vector3f e=Vector3f(0,0,0));
     inline MaterialType getType();
