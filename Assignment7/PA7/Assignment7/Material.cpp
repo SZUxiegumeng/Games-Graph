@@ -13,7 +13,11 @@ float Material::Fresnels(const Vector3f &wi, const Vector3f &wo, const Vector3f 
 	case BSDF:
 	case Cook_Torrance:
 	{
-		float ansF = F0 + (1.0f - F0)*pow5(1 - abs(dotProduct(h, wo)));//这个不应该加这个的，为了调试bsdf
+		float ansF = 1.0f;
+		if (dotProduct(h, wo) > 0)
+			ansF = F0 + (1.0f - F0)*pow5(1 - abs(dotProduct(h, wo)));//这个不应该加这个的，为了调试bsdf
+		else
+			ansF = F0 + (1.0f - F0)*pow5(1 - abs(dotProduct(h, wi)));
 		return std::max(0.0f, std::min(1.0f, ansF));
 		break;
 	}
@@ -52,14 +56,14 @@ float Material::NormalDistrFunc(const Vector3f &wi, const Vector3f&wo, const Vec
 	float m_p1 = this->roughness ,m_p2 = this->roughness * this->roughness;
 	switch (m_type)
 	{
-	case BSDF:
+	//case BSDF:
 	case Cook_Torrance:
 	{
 		return exp(((cosSita_p2 - 1) / cosSita_p2) / m_p2) /
 			(M_PI * m_p2 * cosSita_p2 * cosSita_p2);
 		break;
 	}
-	//case BSDF:
+	case BSDF:
 	case GGX:
 	{
 		float N_d = characFc(cosSita) / M_PI *
@@ -91,15 +95,11 @@ float Material::GeomAtteFactor(const Vector3f &wi, const Vector3f& wo, const Vec
 	case GGX:
 	case BSDF:
 	{
-		if (false && dotProduct(h, N) < 0)
-			std::cout << "this is BUG" << std::endl;
-		float cos_i = abs(dotProduct(wi, N)), cos_o = abs(dotProduct(wo, N)), ag = pow2(0.5 + this->roughness / 2);
+		float cos_i = dotProduct(wi, N), cos_o = dotProduct(wo, N), ag = this->roughness;
 		float G1 = 2 * characFc(dotProduct(wi, h) / cos_i) / (1 + sqrtf(1 + ag * ag*(1 - cos_i * cos_i)/(cos_i*cos_i)));
-		float G2 = 2 * characFc(dotProduct(wi, h) / cos_o) / (1 + sqrtf(1 + ag * ag*(1 - cos_o * cos_o)/(cos_o*cos_o)));
-		G1 = abs(G1); G2 = abs(G2);
+		float G2 = 2 * characFc(dotProduct(wo, h) / cos_o) / (1 + sqrtf(1 + ag * ag*(1 - cos_o * cos_o)/(cos_o*cos_o)));
 		//std::cout << "this is G : " << G1 << "   " << G2 << std::endl;
-		//return 1.0f;
-		return std::max(0.0f, std::min(1.0f, G1 * G2));
+		return G1 * G2;
 	}
 	}
 	return 0.0;
@@ -117,7 +117,7 @@ Vector3f Material::sample(const Vector3f &wi, const Vector3f &N,float& m_pdf) {
 		h = normalize(toWorld(h, N));
 		float cosSita = dotProduct(h, N);
 		float F = Fresnels(wi, wi, N, h);
-		m_pdf = 2.0f*m_p2*r*z / (2 * M_PI*pow2(1 + z * z*(m_p2 - 1)));
+		m_pdf = 2.0f*m_p2*z / (2 * M_PI*pow2(1 + z * z*(m_p2 - 1)));
 	//	std::cout << "this is Fresnels : " << F << std::endl;
 		bool isreflect = true;
 
@@ -163,7 +163,7 @@ Vector3f Material::sample(const Vector3f &wi, const Vector3f &N,float& m_pdf) {
 		//		std::cout << "this wi,wo : " << dotProduct(wi, wi) << "   " << dotProduct(wo, wo) << std::endl;
 				auto hpp = -normalize(wo*ni + wi * nt);
 				auto hppf = -normalize(wo*nt + wi * ni);
-			//	std::cout << "this is htCos  fan:  " << dotProduct(hpp, h) <<"   "<<dotProduct(hppf,h) << std::endl;
+				//std::cout << "this is htCos  fan:  " << dotProduct(hpp, h) <<"   "<<dotProduct(hppf,h) << std::endl;
 				if (abs(dotProduct(hpp, h) - 1) > EPSILON)
 					std::cout << "this is fxck" << std::endl;
 			//	std::cout << "this is pdf : " << m_pdf << std::endl;
@@ -312,6 +312,9 @@ Vector3f Material::eval(const Vector3f &wi, const Vector3f &wo, const Vector3f &
 		{
 			if (dotProduct(N, wo) < 0)
 			{
+			//	std::cout << "this is wi/N " << dotProduct(wi, N) << std::endl;
+			//	std::cout << "this is wo/N " << dotProduct(wo, N) << std::endl;
+			//	std::cout << " --------------------- " << std::endl;
 				std::swap(ni, no);
 			//	std::cout << "this is inside ft " << std::endl;
 			}
@@ -320,8 +323,12 @@ Vector3f Material::eval(const Vector3f &wi, const Vector3f &wo, const Vector3f &
 		//	std::cout << "this is N/h - eval " << dotProduct(ht, N) << std::endl;
 			if (true && dotProduct(ht, N) < 0)
 			{
+				return Vector3f(0.0);
 				std::cout << "this is wi/h " << dotProduct(wi, ht) << std::endl;
 				std::cout << "this is wo/h " << dotProduct(wo, ht) << std::endl;
+				std::cout << "this is wi/N " << dotProduct(wi, N) << std::endl;
+				std::cout << "this is wo/N " << dotProduct(wo, N) << std::endl;
+				std::cout << "this is N/h " << dotProduct(N, ht) << std::endl;
 				auto hpp = -normalize(wo * no + ni * wi);
 				std::cout << "this is hpp " << dotProduct(N, hpp) << std::endl;
 				std::cout << " ======================= " << std::endl;

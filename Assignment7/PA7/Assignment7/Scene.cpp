@@ -71,7 +71,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 	Vector3f pToEyeDir = normalize(-ray.direction);
 	//这里检查有没有碰到，和是否是反射 ，后面有BRSF的时候感觉需要取消第二个条件
 	if(!pInter.happened )
-		return Vector3f();
+		return Vector3f(0.0f);
 	else if (depth==0 && pInter.obj->hasEmit())
 	{
 		//这里是直接碰到光源的设置
@@ -93,11 +93,11 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 		//Ray pSampleRay(pInter.coords + EPSILON * pSampleDir, pSampleDir);
 		//Intersection sampleIntersect = Scene::intersect(pSampleRay);
 		//这个是判断是不是背面，感觉后面BSDF也要去除
-		if (depth!=0 &&  dotProduct(pToLightRay.direction, pInter.normal) > EPSILON && dotProduct(pToLightRay.direction, LightInter.normal) < -EPSILON)
+		if ( dotProduct(pToLightRay.direction, pInter.normal) > EPSILON && dotProduct(pToLightRay.direction, LightInter.normal) < -EPSILON)
 		{
 			Intersection pTolightTravel = Scene::intersect(pToLightRay);
 			//没碰在光源和P之间
-			if (true && (pTolightTravel.coords - LightInter.coords).norm() <= EPSILON)
+			if (true && (pTolightTravel.coords - LightInter.coords).norm() < EPSILON)
 			{
 			//	if (sampleIntersect.happened && sampleIntersect.obj->hasEmit())
 			//		Sample_pdf_p1 = Light_pdf_p1;
@@ -106,10 +106,11 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 				//计算直接光照
 				auto fr = pInter.m->eval(pToEyeDir, pToLightRay.direction, pInter.normal);
 				L_dir = LightInter.emit * fr
-					*abs(dotProduct(pToLightRay.direction, pInter.normal))
-					*abs(dotProduct(-pToLightRay.direction, LightInter.normal))
+					*dotProduct(pToLightRay.direction, pInter.normal)
+					*dotProduct(-pToLightRay.direction, LightInter.normal)
 					/ pow((LightInter.coords - pInter.coords).norm(), 2)
 					/ (Light_pdf_p1  ); 
+				
 #ifdef DEBUG1
 				std::cout << "this is fr : " << fr << std::endl;
 				std::cout << "this is emit : " << LightInter.emit << std::endl;
@@ -152,7 +153,7 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 	Ray pSampleinRay(pInter.coords + EPSILON* pSampleinDir, pSampleinDir);
 	Intersection insampleIntersect = Scene::intersect(pSampleinRay);
 	//间接光照
-	if (true  && inLight_pdf > -EPSILON && abs(dotProduct(pInter.normal, pSampleinRay.direction)) >EPSILON
+	if (true  && inLight_pdf > EPSILON && abs(dotProduct(pInter.normal, pSampleinRay.direction)) >EPSILON
 		&& insampleIntersect.happened && !insampleIntersect.obj->hasEmit())
 	{
 	//	if (t1.x < 0 || t1.y < 0 || t1.z < 0)
@@ -163,10 +164,13 @@ Vector3f Scene::castRay(const Ray &ray, int depth) const
 			* abs(dotProduct(pSampleinRay.direction, pInter.normal))
 			/ (inLight_pdf + EPSILON)
 			/ this->RussianRoulette;
+		
 		//L_indir =L_indir * Vector3f(2.0f);
-		if (false && dotProduct(pInter.normal, pToEyeDir) * dotProduct(pInter.normal, pSampleinRay.direction) < 0)
+		if (true && dotProduct(pInter.normal, pToEyeDir) * dotProduct(pInter.normal, pSampleinRay.direction) < 0)
 		{
 			float ni =pInter.m->m_ni, no = pInter.m->m_nt;
+			if (dotProduct(pInter.normal, pSampleinRay.direction) < 0)
+				std::swap(ni, no);
 			Vector3f ht = -normalize(pSampleinRay.direction * ni + no * pToEyeDir);
 			if (dotProduct(pInter.normal, ht) < 0 )
 			{
